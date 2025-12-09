@@ -519,6 +519,33 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
+    // Create share buttons HTML
+    const shareButtonsHtml = `
+      <div class="share-buttons">
+        <span class="share-label">Share:</span>
+        <button class="share-btn share-twitter tooltip" data-activity="${name}" title="Share on Twitter">
+          <span class="share-icon">🐦</span>
+          <span class="tooltip-text">Share on Twitter</span>
+        </button>
+        <button class="share-btn share-facebook tooltip" data-activity="${name}" title="Share on Facebook">
+          <span class="share-icon">👍</span>
+          <span class="tooltip-text">Share on Facebook</span>
+        </button>
+        <button class="share-btn share-whatsapp tooltip" data-activity="${name}" title="Share on WhatsApp">
+          <span class="share-icon">💬</span>
+          <span class="tooltip-text">Share on WhatsApp</span>
+        </button>
+        <button class="share-btn share-email tooltip" data-activity="${name}" title="Share via Email">
+          <span class="share-icon">✉️</span>
+          <span class="tooltip-text">Share via Email</span>
+        </button>
+        <button class="share-btn share-copy tooltip" data-activity="${name}" title="Copy link">
+          <span class="share-icon">🔗</span>
+          <span class="tooltip-text">Copy link</span>
+        </button>
+      </div>
+    `;
+
     activityCard.innerHTML = `
       ${tagHtml}
       <h4>${name}</h4>
@@ -528,6 +555,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="tooltip-text">Regular meetings at this time throughout the semester</span>
       </p>
       ${capacityIndicator}
+      ${shareButtonsHtml}
       <div class="participants-list">
         <h5>Current Participants:</h5>
         <ul>
@@ -577,6 +605,27 @@ document.addEventListener("DOMContentLoaded", () => {
       button.addEventListener("click", handleUnregister);
     });
 
+    // Add click handlers for share buttons
+    const shareButtons = activityCard.querySelectorAll(".share-btn");
+    shareButtons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        const activityName = e.currentTarget.dataset.activity;
+        const activity = allActivities[activityName];
+        
+        if (e.currentTarget.classList.contains("share-twitter")) {
+          shareOnTwitter(activityName, activity);
+        } else if (e.currentTarget.classList.contains("share-facebook")) {
+          shareOnFacebook(activityName, activity);
+        } else if (e.currentTarget.classList.contains("share-whatsapp")) {
+          shareOnWhatsApp(activityName, activity);
+        } else if (e.currentTarget.classList.contains("share-email")) {
+          shareViaEmail(activityName, activity);
+        } else if (e.currentTarget.classList.contains("share-copy")) {
+          copyShareLink(activityName, activity);
+        }
+      });
+    });
+
     // Add click handler for register button (only when authenticated)
     if (currentUser) {
       const registerButton = activityCard.querySelector(".register-button");
@@ -588,6 +637,63 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     activitiesList.appendChild(activityCard);
+  }
+
+  // Social sharing functions
+  function getShareUrl(activityName) {
+    // Get the current page URL
+    return window.location.href.split('?')[0] + `?activity=${encodeURIComponent(activityName)}`;
+  }
+
+  function getShareText(activityName, activity) {
+    const schedule = formatSchedule(activity);
+    return `Check out ${activityName} at Mergington High School! ${activity.description} Schedule: ${schedule}`;
+  }
+
+  function shareOnTwitter(activityName, activity) {
+    const text = getShareText(activityName, activity);
+    const url = getShareUrl(activityName);
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    window.open(twitterUrl, '_blank', 'width=550,height=420');
+  }
+
+  function shareOnFacebook(activityName, activity) {
+    const url = getShareUrl(activityName);
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    window.open(facebookUrl, '_blank', 'width=550,height=420');
+  }
+
+  function shareOnWhatsApp(activityName, activity) {
+    const text = getShareText(activityName, activity);
+    const url = getShareUrl(activityName);
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+    window.open(whatsappUrl, '_blank');
+  }
+
+  function shareViaEmail(activityName, activity) {
+    const text = getShareText(activityName, activity);
+    const url = getShareUrl(activityName);
+    const subject = `Check out ${activityName} at Mergington High School`;
+    const body = `${text}\n\nLearn more: ${url}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  function copyShareLink(activityName, activity) {
+    const url = getShareUrl(activityName);
+    
+    // Use the Clipboard API to copy the URL
+    navigator.clipboard.writeText(url).then(() => {
+      showMessage('Link copied to clipboard!', 'success');
+    }).catch((err) => {
+      // Fallback for older browsers
+      const tempInput = document.createElement('input');
+      tempInput.value = url;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      showMessage('Link copied to clipboard!', 'success');
+    });
   }
 
   // Event listeners for search and filter
