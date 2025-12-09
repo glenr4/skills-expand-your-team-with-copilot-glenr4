@@ -681,19 +681,41 @@ document.addEventListener("DOMContentLoaded", () => {
   function copyShareLink(activityName, activity) {
     const url = getShareUrl(activityName);
     
-    // Use the Clipboard API to copy the URL
-    navigator.clipboard.writeText(url).then(() => {
-      showMessage('Link copied to clipboard!', 'success');
-    }).catch((err) => {
+    // Check if Clipboard API is available
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      // Use the modern Clipboard API
+      navigator.clipboard.writeText(url).then(() => {
+        showMessage('Link copied to clipboard!', 'success');
+      }).catch((err) => {
+        console.error('Failed to copy using Clipboard API:', err);
+        fallbackCopyToClipboard(url);
+      });
+    } else {
       // Fallback for older browsers
+      fallbackCopyToClipboard(url);
+    }
+  }
+
+  function fallbackCopyToClipboard(text) {
+    try {
       const tempInput = document.createElement('input');
-      tempInput.value = url;
+      tempInput.value = text;
+      tempInput.style.position = 'fixed';
+      tempInput.style.opacity = '0';
       document.body.appendChild(tempInput);
       tempInput.select();
-      document.execCommand('copy');
+      const successful = document.execCommand('copy');
       document.body.removeChild(tempInput);
-      showMessage('Link copied to clipboard!', 'success');
-    });
+      
+      if (successful) {
+        showMessage('Link copied to clipboard!', 'success');
+      } else {
+        showMessage('Failed to copy link. Please try again.', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      showMessage('Failed to copy link. Please copy manually: ' + text, 'error');
+    }
   }
 
   // Event listeners for search and filter
